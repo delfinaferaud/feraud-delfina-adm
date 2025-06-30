@@ -1,7 +1,9 @@
 <script setup>
 import usePelicula from '../composables/usePelicula'
+import useFavoritas from '../composables/useFavoritas.js'
 
 const { peliculaNull } = usePelicula()
+const { favoritas, toggle } = useFavoritas()
 </script>
 
 <template>
@@ -29,8 +31,16 @@ const { peliculaNull } = usePelicula()
         </p>
 
         <div>
-          <button class="btn btn-danger">
-            <i class="bi bi-heart-fill me-2"></i> Add to favorites
+          <button
+            class="btn"
+            :class="favoritas.has(peliculaNull.id) ? 'btn-outline-danger fw-semibold' : 'btn-danger fw-semibold'"
+            @click="toggle(peliculaNull.id)"
+          >
+            <i
+              class="bi me-2"
+              :class="favoritas.has(peliculaNull.id) ? 'bi-heart-fill' : 'bi-heart'"
+            ></i>
+            {{ favoritas.has(peliculaNull.id) ? 'Remove from favorites' : 'Add to favorites' }}
           </button>
         </div>
       </div>

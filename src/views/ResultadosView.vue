@@ -1,64 +1,30 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { useApi } from '../composables/useApi'
+import useFavoritas from '../composables/useFavoritas.js'
+import { buscarPorTexto, buscarPorGenero, buscarTextoYGenero } from '../utils/buscarPeliculas.js'
 
 const route = useRoute()
-const { llamarApi } = useApi()
 
 const peliculas = ref([])
 const mensaje = ref('')
-const favoritas = ref(new Set())
-
-onMounted(() => {
-  const guardados = localStorage.getItem('favoritasPeliculas')
-  if (guardados) {
-    try {
-      favoritas.value = new Set(JSON.parse(guardados))
-    } catch {
-      favoritas.value = new Set()
-    }
-  }
-})
-
-const toggleFavorito = (id) => {
-  if (favoritas.value.has(id)) {
-    favoritas.value.delete(id)
-  } else {
-    favoritas.value.add(id)
-  }
-  favoritas.value = new Set(favoritas.value)
-  localStorage.setItem('favoritasPeliculas', JSON.stringify(Array.from(favoritas.value)))
-}
-
-const cargarBusquedaTexto = async (termino) => {
-  const { results } = await llamarApi(`/search/movie?query=${encodeURIComponent(termino)}`)
-  return results
-}
-const cargarSoloGenero = async (idGenero) => {
-  const { results } = await llamarApi(`/discover/movie?with_genres=${idGenero}`)
-  return results
-}
-const cargarTextoYGenero = async (termino, idGenero) => {
-  const base = await cargarBusquedaTexto(termino)
-  return base.filter((p) => p.genre_ids.includes(+idGenero))
-}
+const { favoritas, toggle } = useFavoritas()
 
 watch(
   () => [route.query.q, route.query.genero],
   async ([texto, genero]) => {
     try {
       if (texto && genero) {
-        peliculas.value = await cargarTextoYGenero(texto, genero)
+        peliculas.value = await buscarTextoYGenero(texto, genero)
         mensaje.value = peliculas.value.length
           ? ''
-          : 'No se encontraron películas con ese texto en este género'
+          : 'No results found'
       } else if (genero) {
-        peliculas.value = await cargarSoloGenero(genero)
-        mensaje.value = peliculas.value.length ? '' : 'No se encontraron películas en este género'
+        peliculas.value = await buscarPorGenero(genero)
+        mensaje.value = peliculas.value.length ? '' : 'No results found for the genre selected'
       } else if (texto) {
-        peliculas.value = await cargarBusquedaTexto(texto)
-        mensaje.value = peliculas.value.length ? '' : 'No se encontraron películas'
+        peliculas.value = await buscarPorTexto(texto)
+        mensaje.value = peliculas.value.length ? '' : 'No movies found matching your search'
       } else {
         peliculas.value = []
         mensaje.value = ''
@@ -75,8 +41,12 @@ watch(
 
 <template>
   <div class="container my-4">
-    <h1 class="fs-3 text-center mb-4">Resultados</h1>
-      <p v-if="mensaje" class="text-center text-danger fs-5">
+    <h1 class="fs-3 text-center mb-4">
+  Results
+  <span v-if="route.query.q">for "{{ route.query.q }}"</span>
+  <span v-if="route.query.genero && !route.query.q">for selected genre</span>
+</h1>
+    <p v-if="mensaje" class="text-center text-danger fs-5">
       {{ mensaje }}
     </p>
     <div class="row" v-if="peliculas.length">
@@ -101,7 +71,7 @@ watch(
             <i
               :class="['bi', favoritas.has(pelicula.id) ? 'bi-heart-fill text-danger' : 'bi-heart']"
               style="cursor: pointer"
-              @click.prevent="toggleFavorito(pelicula.id)"
+              @click.prevent="toggle(pelicula.id)"
               title="Marcar como favorita"
             ></i>
           </div>

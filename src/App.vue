@@ -1,8 +1,15 @@
 <script setup>
-import { RouterView } from 'vue-router'
+import { RouterView, useRoute } from 'vue-router'
+import { computed } from 'vue'
 import usePelicula from './composables/usePelicula'
 
-const { search, peliculas, generos, mensaje, buscarPelicula, buscarPorGenero, filtroGenero } = usePelicula()
+const { search, peliculas, generos, mensaje, buscarPelicula, buscarPorGenero, filtroGenero } =
+  usePelicula()
+const route = useRoute()
+
+const showSearchBar = computed(
+  () => route.name !== 'favoritas' && route.name !== 'detalle-pelicula',
+)
 </script>
 
 <template>
@@ -39,7 +46,10 @@ const { search, peliculas, generos, mensaje, buscarPelicula, buscarPorGenero, fi
     </nav>
   </header>
   <main>
-    <div class="d-flex align-items-center my-3 gap-2 justify-content-center">
+    <div
+      v-if="showSearchBar"
+      class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center justify-content-center gap-2 my-3 px-3"
+    >
       <input
         type="text"
         class="form-control w-auto"
@@ -54,6 +64,6 @@ const { search, peliculas, generos, mensaje, buscarPelicula, buscarPorGenero, fi
         </option>
       </select>
     </div>
-    <RouterView :peliculas="peliculas" :mensaje="mensaje"/>
+    <RouterView :peliculas="peliculas" :mensaje="mensaje" />
   </main>
 </template>

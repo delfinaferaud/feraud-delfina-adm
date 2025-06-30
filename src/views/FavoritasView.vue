@@ -1,27 +1,21 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useApi } from '../composables/useApi'
+import useFavoritas from '../composables/useFavoritas'
 
 const { llamarApi } = useApi()
+const { favoritas, toggle } = useFavoritas()
 
 const peliculasFavoritas = ref([])
-const idsFavoritas = ref(new Set())
 
 onMounted(async () => {
-  const guardados = localStorage.getItem('favoritasPeliculas')
-  if (guardados) {
-    try {
-      idsFavoritas.value = new Set(JSON.parse(guardados))
-      await cargarPeliculasFavoritas()
-    } catch (e) {
-      idsFavoritas.value = new Set()
-    }
-  }
+  await cargarPeliculasFavoritas()
 })
 
 const cargarPeliculasFavoritas = async () => {
   peliculasFavoritas.value = []
-  for (const id of idsFavoritas.value) {
+
+  for (const id of favoritas.value) {
     try {
       const pelicula = await llamarApi(`/movie/${id}`)
       peliculasFavoritas.value.push(pelicula)
@@ -31,16 +25,12 @@ const cargarPeliculasFavoritas = async () => {
   }
 }
 
-const toggleFavorita = (id) => {
-  if (idsFavoritas.value.has(id)) {
-    idsFavoritas.value.delete(id)
-  } else {
-    idsFavoritas.value.add(id)
-  }
-  localStorage.setItem('favoritasPeliculas', JSON.stringify(Array.from(idsFavoritas.value)))
-  cargarPeliculasFavoritas()
+const toggleFavorita = async (id) => {
+  toggle(id)
+  await cargarPeliculasFavoritas()
 }
 </script>
+
 <template>
   <div class="container my-4">
     <h1 class="fs-3 text-center mb-4">My favorite movies</h1>
@@ -71,7 +61,7 @@ const toggleFavorita = (id) => {
             <i
               :class="[
                 'bi',
-                idsFavoritas.has(pelicula.id) ? 'bi-heart-fill text-danger' : 'bi-heart'
+                favoritas.has(pelicula.id) ? 'bi-heart-fill text-danger' : 'bi-heart'
               ]"
               style="cursor: pointer;"
               @click.prevent="toggleFavorita(pelicula.id)"

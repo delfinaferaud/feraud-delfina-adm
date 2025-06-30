@@ -1,31 +1,9 @@
 <script setup>
 import usePelicula from '../composables/usePelicula'
-import { ref, onMounted } from 'vue'
+import useFavoritas from '../composables/useFavoritas.js'
 
 const { peliculas } = usePelicula()
-const favoritas = ref(new Set())
-
-onMounted(() => {
-  const guardados = localStorage.getItem('favoritasPeliculas')
-  if (guardados) {
-    try {
-      favoritas.value = new Set(JSON.parse(guardados))
-    } catch (e) {
-      favoritas.value = new Set()
-    }
-  }
-})
-
-const toggleFavorito = (id) => {
-  if (favoritas.value.has(id)) {
-    favoritas.value.delete(id)
-  } else {
-    favoritas.value.add(id)
-  }
-  favoritas.value = new Set(favoritas.value)
-
-  localStorage.setItem('favoritasPeliculas', JSON.stringify(Array.from(favoritas.value)))
-}
+const { favoritas, toggle } = useFavoritas()
 
 defineProps({
   titulo: {
@@ -59,7 +37,7 @@ defineProps({
             <i
               :class="['bi', favoritas.has(pelicula.id) ? 'bi-heart-fill text-danger' : 'bi-heart']"
               style="cursor: pointer"
-              @click.prevent="toggleFavorito(pelicula.id)"
+              @click.prevent="toggle(pelicula.id)"
               title="Marcar como favorita"
             ></i>
           </div>

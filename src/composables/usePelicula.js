@@ -1,4 +1,4 @@
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useApi } from './useApi'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -19,27 +19,18 @@ export default function usePelicula() {
       const apiPeliculas = `/movie/popular`
       const resultado = await llamarApi(apiPeliculas)
       peliculas.value = resultado.results
-      console.log(resultado.results)
     } catch (error) {
       console.log(error)
     }
   })
 
-  const buildQuery = () => {
-    const query = {}
-    if (search.value.trim())       query.q       = search.value.trim()
-    if (filtroGenero.value !== '') query.genero  = filtroGenero.value
-    return query
-  }
-
   const buscarPelicula = () => {
-    const query = buildQuery()
-    if (!query.q) {
-      mensaje.value   = 'Escribí un nombre de película'
+    if (!query.value.q) {
+      mensaje.value = 'Escribí un nombre de película'
       peliculas.value = []
       return
     }
-    router.push({ path: '/resultados', query })
+    router.push({ path: '/resultados', query: query.value })
     search.value = ''
   }
 
@@ -67,15 +58,20 @@ export default function usePelicula() {
     cargarGeneros()
   })
 
-const buscarPorGenero = () => {
-    const query = buildQuery()
-    if (!query.genero && !query.q) {
+  const buscarPorGenero = () => {
+    if (!query.value.q && !query.value.genero) {
       router.push('/')
       return
     }
-    router.push({ path: '/resultados', query })
+    router.push({ path: '/resultados', query: query.value })
   }
 
+  const query = computed(() => {
+    const q = {}
+    if (search.value.trim()) q.q = search.value.trim()
+    if (filtroGenero.value !== '') q.genero = filtroGenero.value
+    return q
+  })
 
   return {
     search,
@@ -85,6 +81,6 @@ const buscarPorGenero = () => {
     peliculaNull,
     filtroGenero,
     generos,
-    buscarPorGenero
+    buscarPorGenero,
   }
 }
